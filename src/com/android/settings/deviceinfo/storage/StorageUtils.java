@@ -271,7 +271,7 @@ public class StorageUtils {
     /** Gets a summary which has a byte size information. */
     public static String getStorageSummary(Context context, int resId, long bytes) {
         final Formatter.BytesResult result = Formatter.formatBytes(context.getResources(),
-                bytes, Formatter.FLAG_SHORTER);
+                bytes, Formatter.FLAG_IEC_UNITS);
         return context.getString(resId, result.value, result.units);
     }
 
