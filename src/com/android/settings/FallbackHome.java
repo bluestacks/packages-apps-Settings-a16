@@ -21,9 +21,11 @@ import android.app.WallpaperColors;
 import android.app.WallpaperManager;
 import android.app.WallpaperManager.OnColorsChangedListener;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -38,6 +40,8 @@ import android.view.View;
 import android.view.WindowManager.LayoutParams;
 import android.view.animation.AnimationUtils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class FallbackHome extends Activity {
@@ -48,16 +52,6 @@ public class FallbackHome extends Activity {
     private WallpaperManager mWallManager;
 
     private final Runnable mProgressTimeoutRunnable = () -> {
-        View v = getLayoutInflater().inflate(
-                R.layout.fallback_home_finishing_boot, null /* root */);
-        setContentView(v);
-        v.setAlpha(0f);
-        v.animate()
-                .alpha(1f)
-                .setDuration(500)
-                .setInterpolator(AnimationUtils.loadInterpolator(
-                        this, android.R.interpolator.fast_out_slow_in))
-                .start();
         getWindow().addFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
     };
 
@@ -112,15 +106,11 @@ public class FallbackHome extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (mProvisioned) {
-            mHandler.postDelayed(mProgressTimeoutRunnable, mProgressTimeout);
-        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        mHandler.removeCallbacks(mProgressTimeoutRunnable);
     }
 
     protected void onDestroy() {
@@ -170,11 +160,24 @@ public class FallbackHome extends Activity {
             final Intent homeIntent = new Intent(Intent.ACTION_MAIN)
                     .addCategory(Intent.CATEGORY_HOME);
             final ResolveInfo homeInfo = getPackageManager().resolveActivity(homeIntent, 0);
-            if (Objects.equals(getPackageName(), homeInfo.activityInfo.packageName)) {
+            if (homeInfo == null || homeInfo.activityInfo == null
+                    || Objects.equals(getPackageName(), homeInfo.activityInfo.packageName)) {
                 Log.d(TAG, "User unlocked but no home; let's hope someone enables one soon?");
-                mHandler.sendEmptyMessageDelayed(0, 500);
+                mHandler.sendEmptyMessageDelayed(0, 100);
             } else {
                 Log.d(TAG, "User unlocked and real home found; let's go!");
+                if (homeInfo.activityInfo.name.contains(
+                        "com.android.internal.app.ResolverActivity")) {
+                    try {
+                        if (bstSetDefaultLauncher("com.uncube.launcher3")) {
+                            Log.d(TAG, "Selected the BlueStacks launcher as default home");
+                        } else {
+                            Log.w(TAG, "BlueStacks launcher is not available");
+                        }
+                    } catch (RuntimeException e) {
+                        Log.w(TAG, "Unable to select the default launcher", e);
+                    }
+                }
                 getSystemService(PowerManager.class).userActivity(
                         SystemClock.uptimeMillis(), false);
                 finish();
@@ -182,6 +185,43 @@ public class FallbackHome extends Activity {
         } else {
             Log.d(TAG, "User not yet unlocked");
         }
+    }
+
+    private boolean bstSetDefaultLauncher(String preferredPackage) {
+        final Intent homeIntent = new Intent(Intent.ACTION_MAIN)
+                .addCategory(Intent.CATEGORY_HOME);
+        final IntentFilter filter = new IntentFilter(Intent.ACTION_MAIN);
+        filter.addCategory(Intent.CATEGORY_HOME);
+        filter.addCategory(Intent.CATEGORY_DEFAULT);
+
+        final List<ResolveInfo> candidates = getPackageManager().queryIntentActivities(
+                homeIntent,
+                PackageManager.MATCH_DEFAULT_ONLY | PackageManager.GET_RESOLVED_FILTER);
+        final List<ComponentName> components = new ArrayList<>();
+        ComponentName preferredComponent = null;
+        int bestMatch = 0;
+
+        for (int i = 0; i < candidates.size(); i++) {
+            final ResolveInfo candidate = candidates.get(i);
+            if (candidate.activityInfo == null) {
+                continue;
+            }
+            final ComponentName component = new ComponentName(candidate.activityInfo.packageName,
+                    candidate.activityInfo.name);
+            components.add(component);
+            bestMatch = Math.max(bestMatch, candidate.match);
+            if (preferredPackage.equals(candidate.activityInfo.packageName)) {
+                preferredComponent = component;
+            }
+        }
+
+        if (preferredComponent == null) {
+            return false;
+        }
+        getPackageManager().addPreferredActivity(filter, bestMatch,
+                components.toArray(new ComponentName[0]),
+                preferredComponent);
+        return true;
     }
 
     // Set the system ui flags to light status bar if the wallpaper supports dark text to match
