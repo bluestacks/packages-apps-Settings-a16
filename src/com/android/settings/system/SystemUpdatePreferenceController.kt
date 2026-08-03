@@ -18,6 +18,7 @@ package com.android.settings.system
 
 import android.content.Context
 import android.os.Build
+import android.os.SystemProperties
 import android.os.SystemUpdateManager
 import android.os.UserManager
 import android.util.Log
@@ -38,9 +39,12 @@ open class SystemUpdatePreferenceController(context: Context, preferenceKey: Str
     private val systemUpdateRepository = SystemUpdateRepository(context)
     private val clientInitiatedActionRepository = ClientInitiatedActionRepository(context)
     private lateinit var preference: Preference
+    private val bstChangesEnabled =
+        SystemProperties.getInt("bst.config.modify_settings", 1) > 0
 
     override fun getAvailabilityStatus() =
-        if (mContext.resources.getBoolean(R.bool.config_show_system_update_settings) &&
+        if (!bstChangesEnabled &&
+            mContext.resources.getBoolean(R.bool.config_show_system_update_settings) &&
             userManager.isAdminUser
         ) AVAILABLE else UNSUPPORTED_ON_DEVICE
 

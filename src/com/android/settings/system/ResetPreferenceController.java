@@ -16,12 +16,15 @@
 package com.android.settings.system;
 
 import android.content.Context;
+import android.os.SystemProperties;
 
 import com.android.settings.R;
 import com.android.settings.core.BasePreferenceController;
 
 // LINT.IfChange
 public class ResetPreferenceController extends BasePreferenceController {
+    private static final boolean BST_CHANGES_ENABLED =
+            SystemProperties.getInt("bst.config.modify_settings", 1) > 0;
 
     public ResetPreferenceController(Context context, String preferenceKey) {
         super(context, preferenceKey);
@@ -29,6 +32,9 @@ public class ResetPreferenceController extends BasePreferenceController {
 
     @Override
     public int getAvailabilityStatus() {
+        if (BST_CHANGES_ENABLED) {
+            return UNSUPPORTED_ON_DEVICE;
+        }
         return mContext.getResources().getBoolean(R.bool.config_show_reset_dashboard)
                 ? AVAILABLE : UNSUPPORTED_ON_DEVICE;
     }

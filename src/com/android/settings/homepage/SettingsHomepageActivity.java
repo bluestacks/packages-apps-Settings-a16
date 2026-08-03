@@ -36,6 +36,7 @@ import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Process;
+import android.os.SystemProperties;
 import android.os.UserHandle;
 import android.os.UserManager;
 import android.text.TextUtils;
@@ -90,6 +91,8 @@ public class SettingsHomepageActivity extends FragmentActivity implements
         CategoryMixin.CategoryHandler {
 
     private static final String TAG = "SettingsHomepageActivity";
+    private static final boolean BST_CHANGES_ENABLED =
+            SystemProperties.getInt("bst.config.modify_settings", 1) > 0;
 
     // Additional extra of Settings#ACTION_SETTINGS_LARGE_SCREEN_DEEP_LINK.
     // Put true value to the intent when startActivity for a deep link intent from this Activity.
@@ -407,7 +410,13 @@ public class SettingsHomepageActivity extends FragmentActivity implements
     }
 
     private void initSearchBarView() {
-        View toolbar = findViewById(R.id.search_action_bar);
+        final View toolbar = findViewById(R.id.search_action_bar);
+        if (BST_CHANGES_ENABLED) {
+            if (toolbar != null) {
+                toolbar.setVisibility(View.GONE);
+            }
+            return;
+        }
         FeatureFactory.getFeatureFactory().getSearchFeatureProvider()
                 .initSearchToolbar(this /* activity */, toolbar,
                         SettingsEnums.SETTINGS_HOMEPAGE);

@@ -24,6 +24,7 @@ import android.app.settings.SettingsEnums;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.os.SystemProperties;
 import android.provider.SearchIndexableResource;
 import android.text.TextUtils;
 import android.util.Log;
@@ -66,6 +67,8 @@ public class TopLevelSettings extends DashboardFragment implements SplitLayoutLi
     private static final String TAG = "TopLevelSettings";
     private static final String SAVED_HIGHLIGHT_MIXIN = "highlight_mixin";
     private static final String PREF_KEY_SUPPORT = "top_level_support";
+    private static final boolean BST_CHANGES_ENABLED =
+            SystemProperties.getInt("bst.config.modify_settings", 1) > 0;
 
     private boolean mIsEmbeddingActivityEnabled;
     private TopLevelHighlightMixin mHighlightMixin;
@@ -349,6 +352,9 @@ public class TopLevelSettings extends DashboardFragment implements SplitLayoutLi
     }
 
     private static int getPreferenceLayoutResId(Context context) {
+        if (BST_CHANGES_ENABLED) {
+            return R.xml.top_level_settings_bst;
+        }
         return SettingsThemeHelper.isExpressiveTheme(context)
                 ? R.xml.top_level_settings_expressive
                 : R.xml.top_level_settings;

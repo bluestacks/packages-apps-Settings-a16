@@ -17,6 +17,7 @@
 package com.android.settings.language;
 
 import android.content.Context;
+import android.os.SystemProperties;
 
 import androidx.annotation.VisibleForTesting;
 
@@ -27,6 +28,8 @@ import com.android.settings.core.BasePreferenceController;
 public class PointerSpeedController extends BasePreferenceController {
 
     @VisibleForTesting static final String KEY_POINTER_SPEED = "pointer_speed";
+    private static final boolean BST_CHANGES_ENABLED =
+            SystemProperties.getInt("bst.config.modify_settings", 1) > 0;
 
     public PointerSpeedController(Context context) {
         super(context, KEY_POINTER_SPEED);
@@ -34,6 +37,9 @@ public class PointerSpeedController extends BasePreferenceController {
 
     @AvailabilityStatus
     public int getAvailabilityStatus() {
+        if (BST_CHANGES_ENABLED) {
+            return UNSUPPORTED_ON_DEVICE;
+        }
         return mContext.getResources().getBoolean(R.bool.config_show_pointer_speed)
                 ? AVAILABLE
                 : UNSUPPORTED_ON_DEVICE;

@@ -21,6 +21,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.hardware.input.InputManager;
 import android.icu.text.ListFormatter;
+import android.os.SystemProperties;
 import android.provider.Settings;
 
 import androidx.preference.Preference;
@@ -43,6 +44,8 @@ public class PhysicalKeyboardPreferenceController extends AbstractPreferenceCont
         InputManager.InputDeviceListener {
 
     private final InputManager mIm;
+    private static final boolean BST_CHANGES_ENABLED =
+            SystemProperties.getInt("bst.config.modify_settings", 1) > 0;
 
     private Preference mPreference;
 
@@ -57,7 +60,7 @@ public class PhysicalKeyboardPreferenceController extends AbstractPreferenceCont
 
     @Override
     public boolean isAvailable() {
-        return !getKeyboards().isEmpty()
+        return (BST_CHANGES_ENABLED || !getKeyboards().isEmpty())
                 && mContext.getResources().getBoolean(R.bool.config_show_physical_keyboard_pref);
     }
 
@@ -111,6 +114,10 @@ public class PhysicalKeyboardPreferenceController extends AbstractPreferenceCont
 
     private void updateEntry() {
         if (mPreference == null) {
+            return;
+        }
+        if (BST_CHANGES_ENABLED) {
+            mPreference.setVisible(true);
             return;
         }
         List<HardKeyboardDeviceInfo> keyboards = getKeyboards();

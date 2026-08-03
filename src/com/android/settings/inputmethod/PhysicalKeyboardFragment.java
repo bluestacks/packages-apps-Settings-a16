@@ -27,6 +27,7 @@ import android.hardware.input.InputSettings;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.SystemProperties;
 import android.os.UserHandle;
 import android.provider.SearchIndexableResource;
 import android.provider.Settings.Secure;
@@ -73,6 +74,8 @@ public final class PhysicalKeyboardFragment extends DashboardFragment
     private static final String ACCESSIBILITY_PHYSICAL_KEYBOARD_A11Y = "physical_keyboard_a11y";
     private static final String KEYBOARD_SHORTCUTS_HELPER = "keyboard_shortcuts_helper";
     private static final String MODIFIER_KEYS_SETTINGS = "modifier_keys_settings";
+    private static final boolean BST_CHANGES_ENABLED =
+            SystemProperties.getInt("bst.config.modify_settings", 1) > 0;
     private static final String EXTRA_AUTO_SELECTION = "auto_selection";
     public static final String EXTRA_INPUT_DEVICE_IDENTIFIER = "input_device_identifier";
     private static final String TAG = "KeyboardAndTouchA11yFragment";
@@ -161,6 +164,12 @@ public final class PhysicalKeyboardFragment extends DashboardFragment
                 .isEnabled(getContext(), FeatureFlagUtils.SETTINGS_NEW_KEYBOARD_MODIFIER_KEY);
         if (!isModifierKeySettingsEnabled) {
             mKeyboardAssistanceCategory.removePreference(findPreference(MODIFIER_KEYS_SETTINGS));
+        }
+        if (BST_CHANGES_ENABLED) {
+            final Preference keyboardShortcuts = findPreference(KEYBOARD_SHORTCUTS_HELPER);
+            if (keyboardShortcuts != null) {
+                mKeyboardAssistanceCategory.removePreference(keyboardShortcuts);
+            }
         }
         mKeyboardA11yCategory.removePreference(mAccessibilityBounceKeys);
         mKeyboardA11yCategory.removePreference(mAccessibilitySlowKeys);
@@ -253,6 +262,9 @@ public final class PhysicalKeyboardFragment extends DashboardFragment
     }
 
     private void scheduleUpdateHardKeyboards() {
+        if (BST_CHANGES_ENABLED) {
+            return;
+        }
         final Context context = getContext();
         ThreadUtils.postOnBackgroundThread(() -> {
             final List<HardKeyboardDeviceInfo> newHardKeyboards = getHardKeyboards(context);

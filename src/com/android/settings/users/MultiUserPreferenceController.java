@@ -18,6 +18,7 @@ package com.android.settings.users;
 
 import android.content.Context;
 import android.content.pm.UserInfo;
+import android.os.SystemProperties;
 import android.os.UserHandle;
 import android.os.UserManager;
 
@@ -26,6 +27,8 @@ import com.android.settings.Utils;
 import com.android.settings.core.BasePreferenceController;
 
 public class MultiUserPreferenceController extends BasePreferenceController {
+    private static final boolean BST_CHANGES_ENABLED =
+            SystemProperties.getInt("bst.config.modify_settings", 1) > 0;
 
     public MultiUserPreferenceController(Context context, String preferenceKey) {
         super(context, preferenceKey);
@@ -33,7 +36,7 @@ public class MultiUserPreferenceController extends BasePreferenceController {
 
     @Override
     public int getAvailabilityStatus() {
-        return (UserHandle.MU_ENABLED && UserManager.supportsMultipleUsers()
+        return (!BST_CHANGES_ENABLED && UserHandle.MU_ENABLED && UserManager.supportsMultipleUsers()
                 && !Utils.isMonkeyRunning()) ? AVAILABLE : UNSUPPORTED_ON_DEVICE;
     }
 

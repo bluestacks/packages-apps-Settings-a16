@@ -18,6 +18,7 @@ package com.android.settings.gestures;
 
 import android.content.Context;
 import android.hardware.display.AmbientDisplayConfiguration;
+import android.os.SystemProperties;
 
 import androidx.annotation.NonNull;
 
@@ -31,6 +32,8 @@ public class GesturesSettingPreferenceController extends BasePreferenceControlle
     private List<AbstractPreferenceController> mGestureControllers;
 
     private static final String FAKE_PREF_KEY = "fake_key_only_for_get_available";
+    private static final boolean BST_CHANGES_ENABLED =
+            SystemProperties.getInt("bst.config.modify_settings", 1) > 0;
 
     public GesturesSettingPreferenceController(Context context, String key) {
         super(context, key);
@@ -38,6 +41,9 @@ public class GesturesSettingPreferenceController extends BasePreferenceControlle
 
     @Override
     public int getAvailabilityStatus() {
+        if (BST_CHANGES_ENABLED) {
+            return UNSUPPORTED_ON_DEVICE;
+        }
         if (mGestureControllers == null) {
             mGestureControllers = buildAllPreferenceControllers(mContext);
         }
