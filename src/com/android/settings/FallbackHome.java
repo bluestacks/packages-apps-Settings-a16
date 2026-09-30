@@ -169,7 +169,7 @@ public class FallbackHome extends Activity {
                 if (homeInfo.activityInfo.name.contains(
                         "com.android.internal.app.ResolverActivity")) {
                     try {
-                        if (bstSetDefaultLauncher("com.uncube.launcher3")) {
+                        if (bstSetDefaultLauncher("com.bluestacks.polaris")) {
                             Log.d(TAG, "Selected the BlueStacks launcher as default home");
                         } else {
                             Log.w(TAG, "BlueStacks launcher is not available");
