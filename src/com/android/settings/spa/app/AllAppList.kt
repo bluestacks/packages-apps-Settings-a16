@@ -114,14 +114,14 @@ class AllAppListModel(
         userIdFlow: Flow<Int>,
         option: Int,
         recordListFlow: Flow<List<AppRecordWithSize>>,
-    ): Flow<List<AppRecordWithSize>> = recordListFlow.filterItem(
-        when (SpinnerItem.entries.getOrNull(option)) {
-            SpinnerItem.Enabled -> ({ it.app.enabled && !it.app.isInstantApp })
-            SpinnerItem.Disabled -> isDisabled
-            SpinnerItem.Instant -> isInstant
-            else -> ({ true })
+    ): Flow<List<AppRecordWithSize>> = recordListFlow.filterItem { record ->
+        record.app.packageName !in HIDDEN_PACKAGES && when (SpinnerItem.entries.getOrNull(option)) {
+            SpinnerItem.Enabled -> record.app.enabled && !record.app.isInstantApp
+            SpinnerItem.Disabled -> isDisabled(record)
+            SpinnerItem.Instant -> isInstant(record)
+            else -> true
         }
-    )
+    }
 
     private val isDisabled: (AppRecordWithSize) -> Boolean =
         { !it.app.enabled && !it.app.isInstantApp }
@@ -156,6 +156,20 @@ class AllAppListModel(
         AppListItem(onClick = AppInfoSettingsProvider.navigator(app = record.app))
     }
 }
+
+// POL-358: hidden from the app list. The retired bst companion services below stay installed
+// for compatibility (see the install list in bst/apks/baklava/) but must not be listed.
+// Note now.gg.billing.service.apk installs as package gg.now.billing.service.
+private val HIDDEN_PACKAGES = setOf(
+    "com.bluestacks.polaris",
+    "com.android.settings",
+    "com.bluestacks.billing.service",
+    "gg.now.billing.service",
+    "gg.now.billing.service2",
+    "gg.now.billing.interceptor",
+    "com.bluestacks.nowgg",
+    "gg.now.accounts",
+)
 
 private enum class SpinnerItem(val stringResId: Int) {
     All(R.string.filter_all_apps),
